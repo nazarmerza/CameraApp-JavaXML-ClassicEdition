@@ -1,14 +1,7 @@
 package com.nm.camerafx.camera;
 
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.BlockingQueue;
-
+import android.app.Activity;
 import android.content.Context;
-import android.content.res.Configuration;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.ImageFormat;
@@ -20,13 +13,20 @@ import android.hardware.Camera;
 import android.hardware.Camera.Parameters;
 import android.os.Handler;
 import android.util.Log;
+import android.view.Surface;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 
 import com.nm.camerafx.VideoCameraActivity;
+import com.nm.camerafx.io.StorageManager;
 import com.nm.camerafx.model.CameraSize;
 import com.nm.camerafx.model.RawMessage;
 import com.nm.camerafx.recorder.Recorder;
+
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.IOException;
+import java.util.concurrent.BlockingQueue;
 
 public class CameraView extends SurfaceView implements Camera.PreviewCallback,
 		SurfaceHolder.Callback, Recorder {
@@ -37,8 +37,8 @@ public class CameraView extends SurfaceView implements Camera.PreviewCallback,
 	}
 
 	public native void decodeyuv420(Bitmap pTarget, byte[] pSource, int format);
-	public native void decodeyuv420spv2(Bitmap pTarget, byte[] pSource);
-	public native void decode(Bitmap pTarget, byte[] pSource);
+//	public native void decodeyuv420spv2(Bitmap pTarget, byte[] pSource);
+//	public native void decode(Bitmap pTarget, byte[] pSource);
 	
 
 	private static final String TAG = CameraView.class.getSimpleName();
@@ -80,12 +80,14 @@ public class CameraView extends SurfaceView implements Camera.PreviewCallback,
 
 	private BlockingQueue<RawMessage> queue = null;
 	private SurfaceTexture surfaceTexture = new SurfaceTexture(10);
+	private final Activity activity;
 
-	public CameraView(Context context, int cameraId, CameraSize selectedSize,
+	public CameraView(Context context, Activity activity, int cameraId, CameraSize selectedSize,
 			int colorFormat) {
 		super(context);
 
 		this.context = context;
+		this.activity = activity;
 		this.cameraId = cameraId;
 		this.cameraFrameSize = selectedSize;
 		this.colorFormat = colorFormat;
@@ -252,20 +254,26 @@ public class CameraView extends SurfaceView implements Camera.PreviewCallback,
 		// set camera parameters
 		Camera.Parameters params = mCamera.getParameters();
 
-		// find current orientation
-		orientation = VideoCameraActivity.mOrientation;
+		android.hardware.Camera.CameraInfo info =
+				new android.hardware.Camera.CameraInfo();
+		android.hardware.Camera.getCameraInfo(cameraId, info);
+		int rotation = activity.getWindowManager().getDefaultDisplay().getRotation();
 		int degrees = 0;
-
-		if (orientation == Configuration.ORIENTATION_PORTRAIT) {
-			degrees = 90;
-		} else {
-			degrees = 0;
+		switch (rotation) {
+			case Surface.ROTATION_0: degrees = 0; break;
+			case Surface.ROTATION_90: degrees = 90; break;
+			case Surface.ROTATION_180: degrees = 180; break;
+			case Surface.ROTATION_270: degrees = 270; break;
 		}
 
-		/*
-		 * if (cameraId == Camera.CameraInfo.CAMERA_FACING_FRONT) { degrees =
-		 * degrees + 90; }
-		 */
+		int result;
+		if (info.facing == Camera.CameraInfo.CAMERA_FACING_FRONT) {
+			result = (info.orientation + degrees) % 360;
+			result = (360 - result) % 360;  // compensate the mirror
+		} else {  // back-facing
+			result = (info.orientation - degrees + 360) % 360;
+		}
+		mCamera.setDisplayOrientation(result);
 
 		params.setWhiteBalance(whiteBalance);
 		params.setSceneMode(Parameters.SCENE_MODE_AUTO);
@@ -279,7 +287,6 @@ public class CameraView extends SurfaceView implements Camera.PreviewCallback,
         params.setWhiteBalance(whiteBalance);
 		
 		params.setPreviewSize(cameraFrameSize.width, cameraFrameSize.height);
-		mCamera.setDisplayOrientation(degrees);
 		params.setPreviewFormat(ImageFormat.NV21);
 		// params.setPreviewFormat(ImageFormat.YV12);
 		params.set("cam_mode", 1);
@@ -366,7 +373,7 @@ public class CameraView extends SurfaceView implements Camera.PreviewCallback,
 
 		if (DEBUG) Log.d(TAG, "takePicture() take picture set true");
 		Bitmap picture = null;
-		if (VideoCameraActivity.mOrientation == Configuration.ORIENTATION_PORTRAIT) {
+		if (VideoCameraActivity.mOrientation != android.content.res.Configuration.ORIENTATION_LANDSCAPE) {
 			
             Matrix matrix = new Matrix();
             matrix.postRotate(90);
@@ -381,15 +388,12 @@ public class CameraView extends SurfaceView implements Camera.PreviewCallback,
 		
 		File file = new File(filePath);
 
-		FileOutputStream out = new FileOutputStream(file);
-		
-		picture.compress(Bitmap.CompressFormat.JPEG, 100, out);
+		ByteArrayOutputStream bos = new ByteArrayOutputStream();
+		picture.compress(Bitmap.CompressFormat.JPEG, 100, bos);
+		byte[] data = bos.toByteArray();
 		
 		String fileName = file.getName();
-		com.nm.camerafx.io.StorageManager.addImageToGallery(context.getApplicationContext(), filePath, fileName, "some description");
-		
-		out.flush();
-		out.close();
+		StorageManager.addImageToGallery(context.getApplicationContext(), data, fileName, "some description");
 		
 		isTakingPicture = false;
 

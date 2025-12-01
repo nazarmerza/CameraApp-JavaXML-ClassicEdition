@@ -7,17 +7,14 @@
     android:background="@color/camera_bg"
     android:baselineAligned="false"
     android:orientation="horizontal"
-    tools:context="com.nm.livecamera.CameraActivity" >
+    tools:context="com.nm.camerafx.VideoCameraActivity">
 
-    
     <!-- Holds Surfaceview -->
-
-
     <RelativeLayout
         android:id="@+id/preview_container"
-        android:layout_width="wrap_content"
+        android:layout_width="0dp"
         android:layout_height="match_parent"
-        android:layout_weight="0.64" >
+        android:layout_weight="1">
 
         <TextView
             android:id="@+id/timer"
@@ -35,10 +32,9 @@
             android:layout_height="match_parent"
             android:orientation="vertical"
             android:paddingLeft="1dp"
-            tools:ignore="UselessParent" >
+            tools:ignore="UselessParent">
 
             <!-- Listview to display slider menu -->
-
             <ListView
                 android:id="@+id/filters_listview"
                 android:layout_width="wrap_content"
@@ -59,8 +55,7 @@
             android:layout_alignParentRight="true"
             android:layout_marginTop="0dp"
             android:layout_toRightOf="@+id/listview_container"
-            android:orientation="vertical" 
-            >
+            android:orientation="vertical">
 
             <ImageButton
                 android:id="@+id/prefs"
@@ -69,108 +64,100 @@
                 android:layout_alignParentLeft="true"
                 android:layout_centerVertical="true"
                 android:layout_marginLeft="26dp"
-               android:padding="20dp"
+                android:padding="12dp"
                 android:background="@null"
                 android:src="@drawable/ic_settings" />
 
             <View
                 android:id="@+id/divider1"
                 android:layout_toRightOf="@+id/prefs"
-                style="@style/divider"
-                 />
+                style="@style/divider" />
 
             <TextView
                 android:id="@+id/resolution_text"
-                android:layout_toRightOf="@+id/divider1"   
+                android:layout_toRightOf="@+id/divider1"
                 style="@style/overly_textview" />
 
             <View
                 android:id="@+id/divider2"
                 android:layout_toRightOf="@+id/resolution_text"
-                style="@style/divider"
-                 />
+                style="@style/divider" />
 
             <TextView
                 android:id="@+id/exposure"
                 android:layout_toRightOf="@+id/divider2"
-                style="@style/overly_textview"
-                
-                />
+                style="@style/overly_textview" />
+
             <View
                 android:id="@+id/divider3"
                 android:layout_toRightOf="@+id/exposure"
-                style="@style/divider"                />
+                style="@style/divider" />
 
             <TextView
                 android:id="@+id/white_balance"
                 android:layout_toRightOf="@+id/divider3"
-                style="@style/overly_textview"
-            	
-                       />
-         
-
+                style="@style/overly_textview" />
         </RelativeLayout>
 
     </RelativeLayout>
 
     <!-- Holds Right-side buttons -->
-
     <LinearLayout
         android:id="@+id/buttons_layout"
-        android:layout_width="160dp"
+        android:layout_width="80dp"
         android:layout_height="match_parent"
-        android:gravity="center_horizontal"
+        android:orientation="vertical"
+        android:gravity="center_horizontal">
 
-        android:orientation="vertical" >
+        <!-- Row 1: photo/video switch -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:gravity="center">
 
-        <View
-            android:layout_width="0dp"
-            android:layout_height="1dp"
-            android:layout_weight="1" >
-        </View>
+            <ImageView
+                android:id="@+id/video_photo_switch"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:background="@drawable/bg_video_photo_switch"
+                android:clickable="true"
+                android:scaleType="fitCenter"
+                android:src="@drawable/ic_camera" />
+        </LinearLayout>
 
-        <ImageView
-            android:id="@+id/video_photo_switch"
-            android:layout_width="70dp"
-            android:layout_height="70dp"
-            android:background="@drawable/bg_video_photo_switch"
-            android:clickable="true"
-            android:scaleType="fitCenter"
-            android:src="@drawable/ic_camera" />
+        <!-- Row 2: record button -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:gravity="center">
 
-        <View
-            android:layout_width="0dp"
-            android:layout_height="1dp"
-            android:layout_weight="1" >
-        </View>
+            <Button
+                android:id="@+id/recrod_btn"
+                style="@style/roundedButton"
+                android:layout_width="56dp"
+                android:layout_height="56dp"
+                android:text="" />
+        </LinearLayout>
 
-        <Button
-            android:id="@+id/recrod_btn"
-            style="@style/roundedButton"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="" />
+        <!-- Row 3: thumbnail -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:gravity="center">
 
-        <View
-            android:layout_width="0dp"
-            android:layout_height="1dp"
-            android:layout_weight="1" >
-        </View>
+            <ImageView
+                android:id="@+id/video_thumbnail"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:background="@drawable/bg_thumbnail"
+                android:clickable="true"
+                android:scaleType="fitXY"
+                android:src="@color/blue_primary" />
+        </LinearLayout>
 
-        <ImageView
-            android:id="@+id/video_thumbnail"
-            android:layout_width="70dp"
-            android:layout_height="70dp"
-            android:background="@drawable/bg_thumbnail"
-            android:clickable="true"
-            android:scaleType="fitXY"
-            android:src="@color/blue_primary" />
-
-        <View
-            android:layout_width="0dp"
-            android:layout_height="1dp"
-            android:layout_weight="1" >
-        </View>
     </LinearLayout>
 
 </LinearLayout>

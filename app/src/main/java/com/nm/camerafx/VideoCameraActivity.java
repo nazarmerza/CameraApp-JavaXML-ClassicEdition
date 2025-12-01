@@ -243,7 +243,7 @@ public class VideoCameraActivity extends AppCompatActivity implements OnClickLis
 
 		// setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
 
-		setContentView(R.layout.activity_videocamera_landscape);
+		setContentView(R.layout.activity_videocamera_portrait);
 
 		if (ContextCompat.checkSelfPermission(
 				this, Manifest.permission.CAMERA) !=
@@ -510,7 +510,7 @@ public class VideoCameraActivity extends AppCompatActivity implements OnClickLis
 		// Construct a CameraPreview instance, and add it to view
 		if (cameraView == null) {
 
-			cameraView = new CameraView(getApplicationContext(), cameraId,
+			cameraView = new CameraView(getApplicationContext(), this, cameraId,
 					currentCameraSize, cg.yuvPlanesLayout());
 			// cameraView.setCameraId(cameraId);
 			// cameraView.setPrviewSize(selectedCameraSize);
@@ -535,7 +535,7 @@ public class VideoCameraActivity extends AppCompatActivity implements OnClickLis
 		String wbTemp = currentWhiteBalance.substring(0, 4);
 		whiteBalanceTextView.setText(currentWhiteBalance.substring(0, 4));
 		
-		sizeScreenElements();
+		//sizeScreenElements();
 		
 
 
