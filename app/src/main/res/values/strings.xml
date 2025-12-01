@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <string name="app_name">Camera FX</string>
+    <string name="dummy_button">Dummy Button</string>
+    <string name="dummy_content">DUMMY\nCONTENT</string>
+    <string name="title_activity_prefs">Preferences</string>
+
+    <string name="action_settings">Settings</string>
+    <string name="drawer_open">Slider Menu Opened</string>
+    <string name="drawer_close">Slider Menu Closed</string>
+
+    <string name="device_not_supported">This device is not supported.</string>
+    <string name="app_exit">Do you want to exit app?</string>
+    <string name="yes">Yes</string>
+    <string name="no">No</string>
+
+    <string name="camera_settings">Camera Settings</string>
+    <string name="shutter_sound">shutter_sound</string>
+
+
+    <!-- Nav Drawer Menu Items -->
+    <string-array name="nav_drawer_items">
+        <item >Blue 1</item>
+        <item >Blue 2</item>
+        <item >Cobalt 1</item>
+        <item >Cobalt 2</item>
+        <item >Cobalt 3</item>
+        <item >Copper 1</item>
+    </string-array>
+
+    <!-- Nav Drawer List Item Icons -->
+    <!-- Keep them in order as the titles are in -->
+    <array name="nav_drawer_icons">
+        <item>@drawable/filter_blue1</item>
+        <item>@drawable/filter_blue2</item>
+        <item>@drawable/filter_cobalt_iron1</item>
+        <item>@drawable/filter_cobalt_iron2</item>
+        <item>@drawable/filter_cobalt_iron3</item>
+        <item>@drawable/filter_copper1</item>
+    </array>
+
+    <!-- Content Description -->
+    <string name="desc_list_item_icon">Item Icon</string>
+
+</resources>

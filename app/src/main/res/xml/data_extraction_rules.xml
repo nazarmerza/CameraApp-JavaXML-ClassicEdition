@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<data-extraction-rules>
+    <cloud-backup>
+        <!-- TODO: Remove the following file path during production and add rules for specific files and directories -->
+        <include domain="sharedpref" path="."/>
+    </cloud-backup>
+</data-extraction-rules>
