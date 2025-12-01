@@ -85,7 +85,9 @@ import com.nm.camerafx.view.ViewAnimator;
 import java.io.File;
 import java.io.IOException;
 import java.text.DecimalFormat;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 public class VideoCameraActivity extends AppCompatActivity implements OnClickListener,
         OnItemClickListener, Communicator, OnSharedPreferenceChangeListener {
@@ -191,8 +193,8 @@ public class VideoCameraActivity extends AppCompatActivity implements OnClickLis
 
     private RecordTimer timer;
 
-    private final ActivityResultLauncher<String> requestPermissionLauncher =
-            registerForActivityResult(new ActivityResultContracts.RequestPermission(), isGranted -> {
+    private final ActivityResultLauncher<String[]> requestPermissionLauncher =
+            registerForActivityResult(new ActivityResultContracts.RequestMultiplePermissions(), (Map<String, Boolean> isGranted) -> {
                 // no-op
             });
 
@@ -209,10 +211,7 @@ public class VideoCameraActivity extends AppCompatActivity implements OnClickLis
 
         setContentView(R.layout.activity_videocamera_portrait);
 
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA)
-                != PackageManager.PERMISSION_GRANTED) {
-            requestPermissionLauncher.launch(Manifest.permission.CAMERA);
-        }
+        requestPermissions();
 
         Display display = getWindowManager().getDefaultDisplay();
         Point size = new Point();
@@ -240,6 +239,21 @@ public class VideoCameraActivity extends AppCompatActivity implements OnClickLis
         mDetector = new GestureDetectorCompat(this, new SwipeGestureListener(filtersListView));
 
         initOrientationChangeListener();
+    }
+
+    private void requestPermissions() {
+        List<String> permissionsToRequest = new ArrayList<>();
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA)
+                != PackageManager.PERMISSION_GRANTED) {
+            permissionsToRequest.add(Manifest.permission.CAMERA);
+        }
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO)
+                != PackageManager.PERMISSION_GRANTED) {
+            permissionsToRequest.add(Manifest.permission.RECORD_AUDIO);
+        }
+        if (!permissionsToRequest.isEmpty()) {
+            requestPermissionLauncher.launch(permissionsToRequest.toArray(new String[0]));
+        }
     }
 
     public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {

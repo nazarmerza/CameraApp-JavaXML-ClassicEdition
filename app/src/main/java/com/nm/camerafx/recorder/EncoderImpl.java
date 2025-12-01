@@ -219,7 +219,8 @@ public class EncoderImpl implements Runnable, Encoder {
 				// should happen before receiving buffers, and should only
 				// happen once
 				if (csdFormatSet) {
-					throw new RuntimeException("format changed twice");
+					//throw new RuntimeException("format changed twice");
+                    continue; // format changed twice, ignore the second one
 				}
 
 				// now that we have the Magic Goodies, start the muxer
