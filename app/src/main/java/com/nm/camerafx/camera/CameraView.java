@@ -11,6 +11,7 @@ import android.graphics.Rect;
 import android.graphics.SurfaceTexture;
 import android.hardware.Camera;
 import android.hardware.Camera.Parameters;
+import android.net.Uri;
 import android.os.Handler;
 import android.util.Log;
 import android.view.Surface;
@@ -82,7 +83,10 @@ public class CameraView extends SurfaceView implements Camera.PreviewCallback,
 	private SurfaceTexture surfaceTexture = new SurfaceTexture(10);
 	private final Activity activity;
 
-	public CameraView(Context context, Activity activity, int cameraId, CameraSize selectedSize,
+    private int displayOrientationDegrees = 0; // 0/90/180/270 for drawing
+
+
+    public CameraView(Context context, Activity activity, int cameraId, CameraSize selectedSize,
 			int colorFormat) {
 		super(context);
 
@@ -257,30 +261,30 @@ public class CameraView extends SurfaceView implements Camera.PreviewCallback,
 		android.hardware.Camera.CameraInfo info =
 				new android.hardware.Camera.CameraInfo();
 		android.hardware.Camera.getCameraInfo(cameraId, info);
-		int rotation = activity.getWindowManager().getDefaultDisplay().getRotation();
-		int degrees = 0;
-		switch (rotation) {
-			case Surface.ROTATION_0: degrees = 0; break;
-			case Surface.ROTATION_90: degrees = 90; break;
-			case Surface.ROTATION_180: degrees = 180; break;
-			case Surface.ROTATION_270: degrees = 270; break;
-		}
 
-		int result;
-		if (info.facing == Camera.CameraInfo.CAMERA_FACING_FRONT) {
-			result = (info.orientation + degrees) % 360;
-			result = (360 - result) % 360;  // compensate the mirror
-		} else {  // back-facing
-			result = (info.orientation - degrees + 360) % 360;
-		}
-		mCamera.setDisplayOrientation(result);
+        int rotation = activity.getWindowManager().getDefaultDisplay().getRotation();
+        int degrees = 0;
+        switch (rotation) {
+            case Surface.ROTATION_0:   degrees = 0;   break;
+            case Surface.ROTATION_90:  degrees = 90;  break;
+            case Surface.ROTATION_180: degrees = 180; break;
+            case Surface.ROTATION_270: degrees = 270; break;
+        }
+
+        int result;
+        if (info.facing == Camera.CameraInfo.CAMERA_FACING_FRONT) {
+            result = (info.orientation + degrees) % 360;
+            result = (360 - result) % 360;  // mirror compensation (kept for completeness)
+        } else { // back-facing
+            result = (info.orientation - degrees + 360) % 360;
+        }
+        mCamera.setDisplayOrientation(result);
+
+// store for our own Canvas draw rotation
+        displayOrientationDegrees = result;
 
 		params.setWhiteBalance(whiteBalance);
 		params.setSceneMode(Parameters.SCENE_MODE_AUTO);
-		
-/*		int index = params.getMinExposureCompensation ();
-		index = (params.getMaxExposureCompensation () - index) / 2;
-		float step = params.getExposureCompensationStep();*/
 		
 		// to set maximum Exposure
         params.setExposureCompensation(exposure);
@@ -288,15 +292,9 @@ public class CameraView extends SurfaceView implements Camera.PreviewCallback,
 		
 		params.setPreviewSize(cameraFrameSize.width, cameraFrameSize.height);
 		params.setPreviewFormat(ImageFormat.NV21);
-		// params.setPreviewFormat(ImageFormat.YV12);
 		params.set("cam_mode", 1);
-		// params.set("orientation", "landscape");
-		// params.setRotation(90);
 		mCamera.setParameters(params);
 
-		// requestLayout();
-
-		// attach byte buffer to camera
 		try {
 			mCamera.setPreviewTexture(surfaceTexture);
 		} catch (IOException e) {
@@ -307,6 +305,7 @@ public class CameraView extends SurfaceView implements Camera.PreviewCallback,
 		mCamera.addCallbackBuffer(callbackBuffer2);
 		mCamera.setPreviewCallbackWithBuffer(this);
 	}
+
 
 	public void stopPreview() {
 		mCamera.stopPreview();
@@ -320,44 +319,45 @@ public class CameraView extends SurfaceView implements Camera.PreviewCallback,
 	}
 
 	private void setPreviewSize(CameraSize actualFrameSize, int width, int height) {
-		
-		src = new Rect(0, 0, actualFrameSize.width, actualFrameSize.height);
-		// now recalculate position values
-		double scaleFactor = getSizeScale(actualFrameSize.width, actualFrameSize.height, width, height);
-		
-		int scaledWidth = (int) (actualFrameSize.width * scaleFactor);
-		int sclaedHeight = (int) (actualFrameSize.height * scaleFactor);
-		dest = new Rect(0, 0, scaledWidth, sclaedHeight);
-		
-
+        // No-op - we now draw in onDraw, which handles all aspect ratios
 	}
 
-	// both sizes must have the same orientation
-	private double getSizeScale(int w, int h, int W, int H) {
+    @Override
+    protected void onDraw(Canvas canvas) {
+        if (mCamera == null || bitmap == null) {
+            return;
+        }
 
-		double ar1 = (double) W / (double) w;
-		double ar2 = (double) H / (double) h;
+        // We’ll draw the decoded bitmap rotated by displayOrientationDegrees
+        final int viewW = getWidth();
+        final int viewH = getHeight();
+        final int bmpW  = bitmap.getWidth();
+        final int bmpH  = bitmap.getHeight();
 
-		if (ar1 < ar2) {
-			return ar1;
-		}
+        final boolean rotate90or270 = (displayOrientationDegrees == 90 || displayOrientationDegrees == 270);
 
-		return ar2;
+        // Effective dimensions on screen after rotation (the bounding box)
+        final float targetW = rotate90or270 ? bmpH : bmpW;
+        final float targetH = rotate90or270 ? bmpW : bmpH;
 
-	}
+        // Scale to fit inside view while preserving aspect
+        final float scale = Math.min(viewW / targetW, viewH / targetH);
 
+        canvas.save();
+        // Draw centered
+        canvas.translate(viewW * 0.5f, viewH * 0.5f);
+        // Apply rotation around center
+        canvas.rotate(displayOrientationDegrees);
+        // Scale image
+        canvas.scale(scale, scale);
+        // Draw bitmap centered at origin
+        canvas.drawBitmap(bitmap, -bmpW * 0.5f, -bmpH * 0.5f, null);
+        canvas.restore();
 
-	//boolean test2 = true;
+        // Re-queue buffer for next frame
+        mCamera.addCallbackBuffer(callbackBuffer1);
+    }
 
-	@Override
-	protected void onDraw(Canvas canvas) {
-
-		if (mCamera != null) {
-			canvas.drawBitmap(bitmap, src, dest, null);
-			//canvas.drawBitmap(bitmap, 0, 0, mPaint);
-			mCamera.addCallbackBuffer(callbackBuffer1);
-		}
-	}
 
 	/**********************************************************************/
 	// Taking picture
@@ -365,18 +365,16 @@ public class CameraView extends SurfaceView implements Camera.PreviewCallback,
 	/**
 	 * @throws IOException
 	 ********************************************************************/
-	public String takePicture(String filePath) throws IOException {
+	public Uri takePicture() throws IOException {
 
-		// taking picture 
 		isTakingPicture = true;
-		//while(takePictureSeenOnPreviewFrame != true ); //&& takePictureSeenOnDraw != true);
 
 		if (DEBUG) Log.d(TAG, "takePicture() take picture set true");
 		Bitmap picture = null;
-		if (VideoCameraActivity.mOrientation != android.content.res.Configuration.ORIENTATION_LANDSCAPE) {
+		if (displayOrientationDegrees != 0) {
 			
             Matrix matrix = new Matrix();
-            matrix.postRotate(90);
+            matrix.postRotate(displayOrientationDegrees);
             picture = bitmap.copy(bitmap.getConfig(), false);
             
             picture = Bitmap.createBitmap(picture, 0, 0, picture.getWidth(), picture.getHeight(), matrix, true);
@@ -385,22 +383,16 @@ public class CameraView extends SurfaceView implements Camera.PreviewCallback,
 			
 		}
 
-		
-		File file = new File(filePath);
-
 		ByteArrayOutputStream bos = new ByteArrayOutputStream();
 		picture.compress(Bitmap.CompressFormat.JPEG, 100, bos);
 		byte[] data = bos.toByteArray();
-		
-		String fileName = file.getName();
-		StorageManager.addImageToGallery(context.getApplicationContext(), data, fileName, "some description");
+
+		String fileName = "IMG_" + System.currentTimeMillis() + ".jpg";
+		Uri imageUri = StorageManager.addImageToGallery(context.getApplicationContext(), data, fileName, "some description");
 		
 		isTakingPicture = false;
 
-		
-
-		//isTakingPicture = false;
-		return filePath;
+		return imageUri;
 
 	}
 	
@@ -434,38 +426,25 @@ public class CameraView extends SurfaceView implements Camera.PreviewCallback,
 
 	}
 
-	boolean test1 = true;
-	boolean display = true;
-
 	@Override
 	public void onPreviewFrame(byte[] pData, Camera pCamera) {
-		// decode(mBackBuffer, pData);
-		
-		
-		
 		if (isTakingPicture) {
-			//if (DEBUG) Log.d(TAG, "onPreviewFrame() take picture mode");
-			//takePictureSeenOnPreviewFrame = true;
 			postInvalidate();
 		} else {
-			//if (DEBUG) Log.d(TAG, "onPreviewFrame() working on frame");
 			decodeyuv420(bitmap, pData, colorFormat);
 
 			postInvalidate();
 
-			//frameCounter++;
 			if (mode == VideoCameraActivity.MEDIA_TYPE_VIDEO) {
 
 				if (isRecording) {
 
-					// get array byte from bitmap
-					// setBitmapByteArray();
 					long ptsNs = System.nanoTime();
 					RawMessage rawMessage = new RawMessage(pData, ptsNs);
 					boolean result = queue.offer(rawMessage);
 
 				
-						if (result == false) {
+					if (result == false) {
 							if (DEBUG) Log.d(TAG, "onPreviewFrame: queue is full");
 						}
 					
@@ -477,33 +456,5 @@ public class CameraView extends SurfaceView implements Camera.PreviewCallback,
 		
 
 	}
-
-
-/*
-	private final double NANOS = 1000000000.0;
-	private int frameCounter = 0;
-	private int MAX_FRAME_COUNT = 100;
-	private long lastTime = 0;
-
-	private List<Long> times = new ArrayList<Long>();
-
-	// Calculates and returns frames per second 
-	private Double fps() {
-
-		// initialize first time
-		if (lastTime == 0) {
-			lastTime = System.nanoTime();
-		}
-
-		double seconds = (System.nanoTime() - lastTime) / NANOS;
-		Double fps = MAX_FRAME_COUNT / seconds;
-		lastTime = System.nanoTime();
-
-		return fps;
-	}*/
-
-
-
-
 
 }
