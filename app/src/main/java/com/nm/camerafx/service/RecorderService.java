@@ -4,6 +4,7 @@ import android.media.MediaCodec;
 import android.media.MediaFormat;
 import android.util.Log;
 
+import com.nm.camerafx.camera.CameraView;
 import com.nm.camerafx.codecs.CodecGenerator;
 import com.nm.camerafx.model.RawMessage;
 import com.nm.camerafx.recorder.AudioRecorder;
@@ -64,7 +65,10 @@ public class RecorderService {
 		//currentOutputFile = StorageManager.getOutputMediaFilePath(StorageManager.MEDIA_TYPE_VIDEO);
 		
 		muxer = new Muxer(currentOutputFile);
-		
+		if (vRecorder instanceof CameraView) {
+			muxer.setOrientationHint(((CameraView) vRecorder).getDisplayOrientation());
+		}
+
 		/*
 		 *  Video recording stream
 		 */

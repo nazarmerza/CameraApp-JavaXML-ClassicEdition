@@ -32,6 +32,10 @@ public class Muxer {
 		trackCount++;
 		return trackIndex;
 	}
+
+	public void setOrientationHint(int degrees) {
+		muxer.setOrientationHint(degrees);
+	}
 	
 	public void start() {
 		muxer.start();

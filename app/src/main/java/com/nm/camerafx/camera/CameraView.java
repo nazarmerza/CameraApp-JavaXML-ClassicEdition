@@ -101,7 +101,10 @@ public class CameraView extends SurfaceView implements Camera.PreviewCallback,
 		
 	}
 
-	
+	public int getDisplayOrientation() {
+		return displayOrientationDegrees;
+	}
+
 	public void setMode(int mode) {
 		this.mode = mode;
 	}
